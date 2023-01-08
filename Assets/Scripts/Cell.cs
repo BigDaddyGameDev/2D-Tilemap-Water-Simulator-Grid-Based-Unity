@@ -1,8 +1,14 @@
-﻿using UnityEngine;
+﻿using System;
+using System.Numerics;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+using UnityEngine.UIElements;
+using Matrix4x4 = UnityEngine.Matrix4x4;
+using Vector3 = UnityEngine.Vector3;
 
 public enum CellType {
-	Blank,
-	Solid
+	Blank = 0,
+	Solid = 1
 }
 
 public enum FlowDirection { 
@@ -12,7 +18,7 @@ public enum FlowDirection {
 	Left = 3
 }
 
-public class Cell : MonoBehaviour {
+public class Cell {
 
 	// Grid index reference
 	public int X { get ; private set; }
@@ -47,44 +53,22 @@ public class Cell : MonoBehaviour {
 	public bool[] FlowDirections = new bool[4];
 
 	// Liquid colors
-	Color Color;
+	Color Color = Color.cyan;
 	Color DarkColor = new Color (0, 0.1f, 0.2f, 1);
-
-	SpriteRenderer BackgroundSprite;
-	SpriteRenderer LiquidSprite;
-	SpriteRenderer FlowSprite;
-
-	Sprite[] FlowSprites;
-
 	bool ShowFlow;
 	bool RenderDownFlowingLiquid;
 	bool RenderFloatingLiquid;
 
-	void Awake() {
-		BackgroundSprite = transform.Find ("Background").GetComponent<SpriteRenderer> ();
-		LiquidSprite = transform.Find ("Liquid").GetComponent<SpriteRenderer> ();
-		FlowSprite = transform.Find ("Flow").GetComponent<SpriteRenderer> ();
-		Color = LiquidSprite.color;
-	}
-
-	public void Set(int x, int y, Vector2 position, float size, Sprite[] flowSprites, bool showflow, bool renderDownFlowingLiquid, bool renderFloatingLiquid) {
-		
+	public void Set(int x, int y)
+	{
 		X = x;
 		Y = y;
-
-		RenderDownFlowingLiquid = renderDownFlowingLiquid;
-		RenderFloatingLiquid = renderFloatingLiquid;
-		ShowFlow = showflow;
-		FlowSprites = flowSprites;
-		transform.position = position;
-		transform.localScale = new Vector2 (size, size);
-
-		FlowSprite.sprite = FlowSprites [0];
 	}
 		
 	public void SetType(CellType type) {
 		Type = type;
-		if (Type == CellType.Solid) {
+		if (Type == CellType.Solid)
+		{
 			Liquid = 0;
 		}
 		UnsettleNeighbors ();
@@ -114,52 +98,40 @@ public class Cell : MonoBehaviour {
 			Right.Settled = false;
 	}
 
-	public void Update() {
+	public void CellUpdate(Tilemap LiquidTilemap, RuleTile WaterTile, RuleTile BlockTile) {
 
 		// Set background color based on cell type
-		if (Type == CellType.Solid) {
-			BackgroundSprite.color = Color.black;
-		} else {
-			BackgroundSprite.color = Color.white;
+		if (Type == CellType.Solid)
+		{
+			LiquidTilemap.SetTile(new Vector3Int(X, Y), BlockTile);
+			Matrix4x4 newSolidMatrix = Matrix4x4.Scale(new Vector3(1, 1, 1));
+			LiquidTilemap.SetTransformMatrix(new Vector3Int(X, Y), newSolidMatrix);
+			return;
+		}
+		else if (Liquid <= 0)
+        {
+            LiquidTilemap.SetTile(new Vector3Int(X, Y), null);
+            return;
 		}
 
-		// Update bitmask based on flow directions
-		Bitmask = 0;
-		if (FlowDirections [(int)FlowDirection.Top])
-			Bitmask += 1;
-		if (FlowDirections [(int)FlowDirection.Right])
-			Bitmask += 2;
-		if (FlowDirections [(int)FlowDirection.Bottom])
-			Bitmask += 4;
-		if (FlowDirections [(int)FlowDirection.Left])
-			Bitmask += 8;
+		LiquidTilemap.SetTile(new Vector3Int(X, Y), WaterTile);
 		
-		if (ShowFlow) {
-			// Show flow direction of this cell
-			FlowSprite.sprite = FlowSprites [Bitmask];
-		} else {
-			FlowSprite.sprite = FlowSprites [0];
-		}
+        // Set color based on pressure in cell
+        Vector3Int pos = new Vector3Int(X, Y);
+        LiquidTilemap.SetTileFlags(pos, TileFlags.None);
+        LiquidTilemap.SetColor(pos, Color.Lerp(Color, DarkColor, Liquid / 4f));
 
-		// Set size of Liquid sprite based on liquid value
-		LiquidSprite.transform.localScale = new Vector2 (1, Mathf.Min (1, Liquid));	
-
-		// Optional rendering flags
-		if (!RenderFloatingLiquid) {
-			// Remove "Floating" liquids
-			if (Bottom != null && Bottom.Type != CellType.Solid && Bottom.Liquid <= 0.99f) {
-				LiquidSprite.transform.localScale = new Vector2 (0, 0);	
-			}
-		}
-		if (RenderDownFlowingLiquid) {
-			// Fill out cell if cell above it has liquid
-			if (Type == CellType.Blank && Top != null && (Top.Liquid > 0.05f || Top.Bitmask == 4)) {
-				LiquidSprite.transform.localScale = new Vector2 (1, 1);	
-			}
-		}
-
-		// Set color based on pressure in cell
-		LiquidSprite.color = Color.Lerp (Color, DarkColor, Liquid / 4f);
-	}
-
+        // Fill out cell if cell above it has liquid
+        Matrix4x4 newMatrix = Matrix4x4.Scale(new Vector3(1, 1, 1));
+        if (Type == CellType.Blank && Top != null && (Top.Liquid > 0.0001f || Top.Bitmask == 4))
+        {
+            LiquidTilemap.SetTransformMatrix(pos, newMatrix);
+        }
+        else
+        {
+            // Set size of Liquid sprite based on liquid value
+            newMatrix = Matrix4x4.Scale(new Vector3(1, Mathf.Min(1, Liquid), 1));
+            LiquidTilemap.SetTransformMatrix(pos, newMatrix);
+        }
+    }
 }

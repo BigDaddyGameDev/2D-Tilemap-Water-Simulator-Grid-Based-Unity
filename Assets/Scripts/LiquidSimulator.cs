@@ -1,27 +1,29 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class Liquid {
+public class LiquidSimulator :MonoBehaviour{
 
 	// Max and min cell liquid values
-	float MaxValue = 1.0f;
-	float MinValue = 0.005f;
+	public float MaxValue = 1.0f;
+    public float MinValue = 0.005f;
 
-	// Extra liquid a cell can store than the cell above it
-	float MaxCompression = 0.25f;
+    // Extra liquid a cell can store than the cell above it
+    public float MaxCompression = 0.25f;
 
-	// Lowest and highest amount of liquids allowed to flow per iteration
-	float MinFlow = 0.005f;
-	float MaxFlow = 4f;
+    // Lowest and highest amount of liquids allowed to flow per iteration
+    public float MinFlow = 0.005f;
+    public float MaxFlow = 4f;
 
-	// Adjusts flow speed (0.0f - 1.0f)
-	float FlowSpeed = 1f;
+    // Adjusts flow speed (0.0f - 1.0f)
+    public float FlowSpeed = 1f;
 
-	// Keep track of modifications to cell liquid values
-	float[,] Diffs;
+    // Keep track of modifications to cell liquid values
+    public float[,] Diffs;
 
 	public void Initialize(Cell[,] cells) {
+
 		Diffs = new float[cells.GetLength (0), cells.GetLength (1)];
+
 	}
 
 	// Calculate how much liquid should flow to destination with pressure
@@ -54,9 +56,10 @@ public class Liquid {
 		}
 
 		// Main loop
-		for (int x = 0; x < cells.GetLength(0); x++) {
-			for (int y = 0; y < cells.GetLength(1); y++) {
-
+		for (int x = 0; x < cells.GetLength(0); x++)
+		{
+			for (int y = 0; y < cells.GetLength(1); y++)
+			{
 				// Get reference to Cell and reset flow
 				Cell cell = cells [x, y];
 				cell.ResetFlowDirections ();
@@ -68,8 +71,10 @@ public class Liquid {
 				}
 				if (cell.Liquid == 0)
 					continue;
+
 				if (cell.Settled) 
 					continue;
+
 				if (cell.Liquid < MinValue) {
 					cell.Liquid = 0;
 					continue;
@@ -79,6 +84,9 @@ public class Liquid {
 				float startValue = cell.Liquid;
 				float remainingValue = cell.Liquid;
 				flow = 0;
+
+
+				Debug.Log("BOTTOM ---> Cell (" + x + "|"+ y + ") BOTTOM (" + x + "|" + (y - 1) + ") exists = " + (cell.Bottom != null) + " AND isBlank = " + (cell.Bottom.Type == CellType.Blank));
 
 				// Flow to bottom cell
 				if (cell.Bottom != null && cell.Bottom.Type == CellType.Blank) {
@@ -97,7 +105,7 @@ public class Liquid {
 					if (flow != 0) {
 						remainingValue -= flow;
 						Diffs [x, y] -= flow;
-						Diffs [x, y + 1] += flow;
+						Diffs [x, y - 1] += flow;
 						cell.FlowDirections[(int)FlowDirection.Bottom] = true;
 						cell.Bottom.Settled = false;
 					} 
@@ -209,12 +217,19 @@ public class Liquid {
 		}
 			
 		// Update Cell values
-		for (int x = 0; x < cells.GetLength (0); x++) {
-			for (int y = 0; y < cells.GetLength (1); y++) {
+		for (int x = 0; x < cells.GetLength (0); x++)
+		{
+			for (int y = 0; y < cells.GetLength (1); y++)
+			{
+
 				cells [x, y].Liquid += Diffs [x, y];
-				if (cells [x, y].Liquid < MinValue) {
+
+				if (cells [x, y].Liquid < MinValue)
+				{
+
 					cells [x, y].Liquid = 0;
 					cells [x, y].Settled = false;	//default empty cell to unsettled
+
 				}				
 			}
 		}			
