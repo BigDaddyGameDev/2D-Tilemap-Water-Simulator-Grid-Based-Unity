@@ -90,58 +90,61 @@ public class Grid : MonoBehaviour {
 		}
 	}
 
-	void Update () {
+	void Update() {
 
-        Vector2 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-    
+		Vector2 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
 		int x = (int)((pos.x));
 		int y = (int)((pos.y));
 
 
-        // Check if we are filling or erasing walls
-        if (Input.GetMouseButtonDown(0))
-        {
-            if ((x > 0 && x < Cells.GetLength(0)) && (y > 0 && y < Cells.GetLength(1)))
-            {
-                if (Cells[x, y].Type == CellType.Blank)
-                {
-                    Fill = true;
-                }
-                else
-                {
-                    Fill = false;
-                }
-            }
-        }
-
-        // Left click draws/erases walls
-        if (Input.GetMouseButton(0))
-        {
-            if (x != 0 && y != 0 && x != Width - 1 && y != Height - 1)
-            {
-                if ((x > 0 && x < Cells.GetLength(0)) && (y > 0 && y < Cells.GetLength(1)))
-                {
-                    if (Fill)
-                    {
-                        Cells[x, y].SetType(CellType.Solid);
-                    }
-                    else
-                    {
-                        Cells[x, y].SetType(CellType.Blank);
-                    }
-                }
-            }
-        }
-
-        // Right click places liquid
-        if (Input.GetMouseButton(1)) {
-			if ((x > 0 && x < Cells.GetLength (0)) && (y > 0 && y < Cells.GetLength (1))) {
-				Cells [x, y].AddLiquid (5);
+		// Check if we are filling or erasing walls
+		if (Input.GetMouseButtonDown(0))
+		{
+			if ((x > 0 && x < Cells.GetLength(0)) && (y > 0 && y < Cells.GetLength(1)))
+			{
+				if (Cells[x, y].Type == CellType.Blank)
+				{
+					Fill = true;
+				}
+				else
+				{
+					Fill = false;
+				}
 			}
 		}
 
-        // Run our liquid simulation 
-        LiquidSimulator.Simulate(ref Cells);
+		// Left click draws/erases walls
+		if (Input.GetMouseButton(0))
+		{
+			if (x != 0 && y != 0 && x != Width - 1 && y != Height - 1)
+			{
+				if ((x > 0 && x < Cells.GetLength(0)) && (y > 0 && y < Cells.GetLength(1)))
+				{
+					if (Fill)
+					{
+						Cells[x, y].SetType(CellType.Solid);
+					}
+					else
+					{
+						Cells[x, y].SetType(CellType.Blank);
+					}
+				}
+			}
+		}
+
+		// Right click places liquid
+		if (Input.GetMouseButton(1)) {
+			if ((x > 0 && x < Cells.GetLength(0)) && (y > 0 && y < Cells.GetLength(1))) {
+				Cells[x, y].AddLiquid(5);
+			}
+		}
+
+		// Run our liquid simulation 
+		LiquidSimulator.Simulate(ref Cells);
+
+		//Vector3Int[] tilePos;
+		//TileBase[] tileArray;
 
 		// Update each cell
 		for (int cx = Cells.GetLength(0) - 1; cx >= 0; cx--)
@@ -151,6 +154,9 @@ public class Grid : MonoBehaviour {
                 Cells[cx, cy].CellUpdate(LiquidTilemap, tileWater, tileBlock);
             }
         }
+
+
+		//LiquidTilemap.SetTiles(tilePos, tileArray);
     }
 
 }
