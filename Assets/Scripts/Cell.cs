@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
@@ -98,40 +99,48 @@ public class Cell {
 			Right.Settled = false;
 	}
 
-	public void CellUpdate(Tilemap LiquidTilemap, RuleTile WaterTile, RuleTile BlockTile) {
+	public Tile CellUpdate(Tilemap LiquidTilemap, Tile[] waterTiles, Tile BlockTile) {
 
 		// Set background color based on cell type
 		if (Type == CellType.Solid)
 		{
-			LiquidTilemap.SetTile(new Vector3Int(X, Y), BlockTile);
-			Matrix4x4 newSolidMatrix = Matrix4x4.Scale(new Vector3(1, 1, 1));
-			LiquidTilemap.SetTransformMatrix(new Vector3Int(X, Y), newSolidMatrix);
-			return;
+			return BlockTile;
 		}
-		else if (Liquid <= 0)
+		else if (Liquid <= 0.001)
         {
-            LiquidTilemap.SetTile(new Vector3Int(X, Y), null);
-            return;
+            return null;
 		}
 
-		LiquidTilemap.SetTile(new Vector3Int(X, Y), WaterTile);
-		
-        // Set color based on pressure in cell
-        Vector3Int pos = new Vector3Int(X, Y);
-        LiquidTilemap.SetTileFlags(pos, TileFlags.None);
-        LiquidTilemap.SetColor(pos, Color.Lerp(Color, DarkColor, Liquid / 4f));
+		// Set Color
+        LiquidTilemap.SetTileFlags(new Vector3Int(X, Y), TileFlags.None);
+        LiquidTilemap.SetColor(new Vector3Int(X, Y), Color.Lerp(Color, DarkColor, Liquid / 4f));
 
-        // Fill out cell if cell above it has liquid
-        Matrix4x4 newMatrix = Matrix4x4.Scale(new Vector3(1, 1, 1));
-        if (Type == CellType.Blank && Top != null && (Top.Liquid > 0.0001f || Top.Bitmask == 4))
-        {
-            LiquidTilemap.SetTransformMatrix(pos, newMatrix);
-        }
-        else
-        {
-            // Set size of Liquid sprite based on liquid value
-            newMatrix = Matrix4x4.Scale(new Vector3(1, Mathf.Min(1, Liquid), 1));
-            LiquidTilemap.SetTransformMatrix(pos, newMatrix);
-        }
+		// Set full sprite if there's a tile above or liquid > 1
+		if (Liquid >= 1 || Type == CellType.Blank && Top != null && (Top.Liquid > 0.0001f || Top.Bitmask == 4))
+		{
+			return waterTiles[7];
+		}
+		else
+		{
+			// Set Sprite proportional to the liquid amount
+			float filledAmount = math.remap(0f, 1f, 0f, 7f, Liquid);
+
+			if (filledAmount < 1f)
+				return waterTiles[0];
+			else if (filledAmount < 2f)
+				return waterTiles[1];
+			else if (filledAmount < 3f)
+				return waterTiles[2];
+			else if (filledAmount < 4f)
+				return waterTiles[3];
+			else if (filledAmount < 5f)
+				return waterTiles[4];
+			else if (filledAmount < 6f)
+				return waterTiles[5];
+			else if (filledAmount < 7f)
+				return waterTiles[6];
+			else
+				return waterTiles[7];
+		}
     }
 }

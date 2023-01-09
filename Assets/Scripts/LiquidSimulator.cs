@@ -85,9 +85,6 @@ public class LiquidSimulator :MonoBehaviour{
 				float remainingValue = cell.Liquid;
 				flow = 0;
 
-
-				Debug.Log("BOTTOM ---> Cell (" + x + "|"+ y + ") BOTTOM (" + x + "|" + (y - 1) + ") exists = " + (cell.Bottom != null) + " AND isBlank = " + (cell.Bottom.Type == CellType.Blank));
-
 				// Flow to bottom cell
 				if (cell.Bottom != null && cell.Bottom.Type == CellType.Blank) {
 
