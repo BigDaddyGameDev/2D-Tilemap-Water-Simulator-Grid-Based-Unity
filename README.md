@@ -2,7 +2,7 @@
 
 
 
-![Example](https://i.imgur.com/g9kTEn7.mp4)
+![Example](https://i.imgur.com/g9kTEn7.gif)
 
 Article with details on how the algorithm works:
 
